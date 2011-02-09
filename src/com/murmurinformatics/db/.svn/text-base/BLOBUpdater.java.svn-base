@@ -1,0 +1,114 @@
+package com.murmurinformatics.db;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import oracle.jdbc.OracleResultSet;
+import oracle.sql.BLOB;
+
+public class BLOBUpdater {
+	private Connection conn;
+	private String tableName;
+	private ColumnMapping primaryKey;
+	private ColumnMapping binaryColumn;
+	private BLOB blob = null;
+	private Object id = null;
+
+	public BLOBUpdater(Connection conn, String tableName, ColumnMapping primaryKey, ColumnMapping binaryColumn) throws SQLException {
+		this.conn = conn;
+		this.tableName = tableName;
+		this.primaryKey = primaryKey;
+		this.binaryColumn = binaryColumn;
+	}
+
+	public BLOBUpdater(Connection conn, String tableName, ColumnMapping primaryKey, String primaryKeyValue, ColumnMapping binaryColumn) throws SQLException {
+		this.conn = conn;
+		this.tableName = tableName;
+		this.primaryKey = primaryKey;
+		this.binaryColumn = binaryColumn;
+		this.id = primaryKeyValue;
+	}
+
+	public void putByteArray(byte[] byteArray) throws SQLException {
+		// new method
+		OutputStream blobOutputStream = blob.getBinaryOutputStream();
+		InputStream byteInputStream = new ByteArrayInputStream(byteArray);
+		byte[] buffer = new byte[10 * 1024];
+
+		int nread = 0;
+
+		try {
+			while ((nread = byteInputStream.read(buffer)) != -1)
+				blobOutputStream.write(buffer, 0, nread);
+			byteInputStream.close();
+			blobOutputStream.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void updateBlob(byte[] blobContents) throws SQLException {
+		if (primaryKey.hasSequence())
+			getInsertedSequence();
+		selectBlobForUpdate();
+		executeUpdateBlob(blobContents);
+	}
+
+	private void getInsertedSequence() throws SQLException {
+		// we need to get the new ID right away
+		PreparedStatement statement = conn.prepareStatement(getIdSql());
+		ResultSet rs = statement.executeQuery();
+		rs.next();
+		id = new Long(rs.getLong(1));
+		statement.close();
+	}
+
+	private String getIdSql() {
+		String selectSql = "SELECT " + primaryKey.getSequenceName() + ".currval FROM dual";
+		return selectSql;
+	}
+
+	private void selectBlobForUpdate() throws SQLException {
+		// now we have to update the record - stupid Oracle method of doing
+		// things
+		PreparedStatement statement = conn.prepareStatement(selectUpdateBinarySql());
+		if (id instanceof Long)
+			statement.setLong(1, ((Long) id).longValue());
+		else if (id instanceof String)
+			statement.setString(1, (String) id);
+		ResultSet rs = statement.executeQuery();
+		rs.next();
+		blob = ((OracleResultSet) rs).getBLOB(1);
+		statement.close();
+	}
+
+	private void executeUpdateBlob(byte[] blobContents) throws SQLException {
+		PreparedStatement statement = conn.prepareStatement(updateBinarySql());
+		int colCount = 1;
+		putByteArray(blobContents);
+		statement.setBlob(colCount++, blob);
+		if (id instanceof Long)
+			statement.setLong(colCount++, ((Long) id).longValue());
+		else if (id instanceof String)
+			statement.setString(colCount++, (String) id);
+		statement.executeUpdate();
+		statement.close();
+	}
+
+	private String selectUpdateBinarySql() {
+		String updateSql = "SELECT " + binaryColumn.getColumnName() + " FROM " + tableName + "  WHERE " + primaryKey.getColumnName() + " = ? FOR UPDATE";
+		return updateSql;
+	}
+
+	private String updateBinarySql() {
+		String updateSql = "UPDATE " + tableName + " SET " + binaryColumn.getColumnName() + " = ? WHERE " + primaryKey.getColumnName() + " = ?";
+		return updateSql;
+	}
+}

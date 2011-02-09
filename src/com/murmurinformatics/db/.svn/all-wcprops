@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/ee_housing/!svn/ver/50/ee_java/src/com/murmurinformatics/db
+END
+ColumnType.java
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/ee_housing/!svn/ver/21/ee_java/src/com/murmurinformatics/db/ColumnType.java
+END
+ColumnModifiers.java
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/ee_housing/!svn/ver/21/ee_java/src/com/murmurinformatics/db/ColumnModifiers.java
+END
+AbstractEntity.java
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/ee_housing/!svn/ver/50/ee_java/src/com/murmurinformatics/db/AbstractEntity.java
+END
+ConnectionSettings.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/ee_housing/!svn/ver/21/ee_java/src/com/murmurinformatics/db/ConnectionSettings.java
+END
+BLOBUpdater.java
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/ee_housing/!svn/ver/21/ee_java/src/com/murmurinformatics/db/BLOBUpdater.java
+END
+ColumnMapping.java
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/ee_housing/!svn/ver/21/ee_java/src/com/murmurinformatics/db/ColumnMapping.java
+END
+ColumnSubquery.java
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/ee_housing/!svn/ver/21/ee_java/src/com/murmurinformatics/db/ColumnSubquery.java
+END
+PooledConnectionManager.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/ee_housing/!svn/ver/21/ee_java/src/com/murmurinformatics/db/PooledConnectionManager.java
+END

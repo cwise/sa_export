@@ -1,0 +1,79 @@
+package com.murmurinformatics.db;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Properties;
+
+import oracle.jdbc.pool.OracleConnectionCacheManager;
+import oracle.jdbc.pool.OracleDataSource;
+
+import com.murmurinformatics.ecoenergy.exceptions.DatabaseException;
+
+/**
+ * Created by IntelliJ IDEA. User: Chris Wise Date: 20-Feb-2007 Time: 10:46:51
+ * AM To change this template use File | Settings | File Templates.
+ */
+public class PooledConnectionManager {
+	private static OracleDataSource ods = null;
+	private static String CACHE_NAME = "EE_CACHE";
+
+	public static Connection getConnection() throws DatabaseException {
+		Connection conn = null;
+		try {
+			conn = ods.getConnection();
+			conn.setAutoCommit(false);
+		} catch (SQLException e) {
+			System.out.print(ods.toString());
+			throw new DatabaseException(e, "Connection", "getNewConnection");
+		}
+
+		return conn;
+	}
+
+	public static boolean setupConnection(ConnectionSettings dbSettings) throws DatabaseException {
+		try {
+			ods = new OracleDataSource();
+			ods.setDriverType("thin");
+			ods.setServerName(dbSettings.getHostAddress());
+			ods.setNetworkProtocol("tcp");
+			if (dbSettings.getDbInstance().length() > 0)
+				ods.setDatabaseName(dbSettings.getDbInstance());
+			else
+				ods.setServiceName(dbSettings.getDbServiceName());
+			ods.setPortNumber(dbSettings.getHostPort());
+			ods.setUser(dbSettings.getDbUser());
+			ods.setPassword(dbSettings.getDbPwd());
+
+			ods.setConnectionCachingEnabled(true);
+			ods.setConnectionCacheName(CACHE_NAME);
+			Properties cacheProps = new Properties();
+			cacheProps.setProperty("MinLimit", "5");
+			cacheProps.setProperty("MaxLimit", "20");
+			cacheProps.setProperty("InitialLimit", "1");
+			cacheProps.setProperty("ConnectionWaitTimeout", "5");
+			cacheProps.setProperty("ValidateConnection", "true");
+			ods.setConnectionCacheProperties(cacheProps);
+
+			// test the connection
+			Connection conn = ods.getConnection();
+			conn.close();
+		} catch (SQLException e) {
+			System.out.print(ods.toString());
+			throw new DatabaseException(e, "Connection", "setupConnection");
+		}
+
+		return true;
+	}
+
+	public static void listCacheInfo() throws SQLException {
+		OracleConnectionCacheManager occm = OracleConnectionCacheManager.getConnectionCacheManagerInstance();
+		System.out.println(occm.getNumberOfAvailableConnections(CACHE_NAME) + " connections are available in cache " + CACHE_NAME);
+		System.out.println(occm.getNumberOfActiveConnections(CACHE_NAME) + " connections are active");
+	}
+
+	public static void refreshConnections() throws SQLException {
+		OracleConnectionCacheManager occm = OracleConnectionCacheManager.getConnectionCacheManagerInstance();
+
+		occm.refreshCache(CACHE_NAME, OracleConnectionCacheManager.REFRESH_INVALID_CONNECTIONS);
+	}
+}

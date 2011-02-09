@@ -1,0 +1,372 @@
+package com.murmurinformatics.db;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+import com.murmurinformatics.ecoenergy.exceptions.DatabaseException;
+import com.murmurinformatics.exceptions.ReflectionException;
+
+import fr.dyade.koala.xml.domlight.XMLContent;
+import fr.dyade.koala.xml.domlight.XMLElement;
+
+public abstract class AbstractEntity {
+	protected long id = 0;
+
+	protected abstract String getTableName();
+
+	protected abstract ArrayList<ColumnMapping> getColumnMappings();
+
+	public AbstractEntity(long id) {
+		this.id = id;
+	}
+
+	public AbstractEntity() {
+
+	}
+
+	public ColumnMapping getPrimaryKeyColumn() {
+		ArrayList<ColumnMapping> cols = getColumnMappings();
+		Iterator<ColumnMapping> it = cols.iterator();
+		while (it.hasNext()) {
+			ColumnMapping col = it.next();
+
+			if (col.isPrimaryKey())
+				return col;
+		}
+
+		return null;
+	}
+
+	public void setId(Long id) {
+		this.id = id.longValue();
+	}
+	
+	public Long getId() {
+		return id;
+	}
+
+	public void select(Connection conn) throws DatabaseException, ReflectionException {
+		String selectSql = getSelectSqlSingle();
+
+		try {
+			int whichCol = 1;
+			PreparedStatement statement = conn.prepareStatement(selectSql);
+			statement.setLong(whichCol++, id);
+
+			ResultSet rs = statement.executeQuery();
+
+			// changed from while to IF since there can only be a single record
+			// by definition
+			if (rs.next())
+				mapResultSet(rs);
+		} catch (SQLException e) {
+			throw new DatabaseException(e, this.toString(), "select", selectSql);
+		} catch (Exception e) {
+			throw new ReflectionException(e, this.toString(), "select");
+		}
+	}
+
+	protected void mapResultSet(ResultSet rs) throws SQLException, ReflectionException {
+		ArrayList<ColumnMapping> cols = getColumnMappings();
+		Iterator<ColumnMapping> it = cols.iterator();
+		while (it.hasNext()) {
+			ColumnMapping col = it.next();
+			String columnName = col.getColumnName();
+			String setterName = col.getSetMethodName();
+			String className = getClass().getName();
+			Method setter = null;
+			Object argList[] = new Object[1];
+
+			try {
+				switch (col.getColumnType()) {
+				case LONG:
+					setter = Class.forName(className).getMethod(setterName, new Class[] { Long.class });
+					argList[0] = new Long(rs.getLong(columnName));
+					break;
+				case INTEGER:
+					setter = Class.forName(className).getMethod(setterName, new Class[] { Integer.class });
+					argList[0] = new Integer(rs.getInt(columnName));
+					break;
+				case VARCHAR:
+					setter = Class.forName(className).getMethod(setterName, new Class[] { String.class });
+					argList[0] = rs.getString(columnName);
+					break;
+				case DATE:
+					setter = Class.forName(className).getMethod(setterName, new Class[] { Date.class });
+					argList[0] = rs.getDate(columnName);
+					break;
+				case TIME:
+					setter = Class.forName(className).getMethod(setterName, new Class[] { Timestamp.class });
+					argList[0] = rs.getTimestamp(columnName);
+					break;					
+				}
+				setter.invoke(this, argList);
+			} catch (Exception e) {
+				throw new ReflectionException(e, this.toString(), "mapResultSet");
+			}
+		}
+	}
+
+	public void update(Connection conn) throws DatabaseException, ReflectionException {
+		String updateSql = "UPDATE  " + getTableName() + " " + "SET " + getUpdateColumnBindings() + " " + "WHERE " + getPrimaryKeyColumn().getColumnName() + " = ?";
+
+		try {
+			PreparedStatement stmt = conn.prepareStatement(updateSql);
+			int colCount = 1;
+
+			// bind columns
+			ArrayList<ColumnMapping> cols = getColumnMappings();
+			Iterator<ColumnMapping> it = cols.iterator();
+
+			while (it.hasNext()) {
+				ColumnMapping col = it.next();
+				if (col.isUpdateable()) {
+					String getterName = col.getGetMethodName();
+					String className = getClass().getName();
+					Method getter = null;
+					Object result = null;
+					getter = Class.forName(className).getMethod(getterName, null);
+					result = getter.invoke(this, (Object[]) null);
+
+					switch (col.getColumnType()) {
+					case INTEGER:
+						stmt.setInt(colCount++, ((Integer) result).intValue());
+						break;
+					case LONG:
+						stmt.setLong(colCount++, ((Long) result).longValue());
+						break;
+					case VARCHAR:
+						stmt.setString(colCount++, (String) result);
+						break;
+					case DATE:
+						stmt.setDate(colCount++, (Date) result);
+						break;		
+					case TIME:
+						stmt.setTimestamp(colCount++, (Timestamp) result);
+						break;							
+					}
+				}
+			}
+
+			// finally set the primary key for the where clause
+			stmt.setLong(colCount++, id);
+			stmt.execute();
+			stmt.close();
+
+			conn.commit();
+		} catch (SQLException e) {
+			try {
+				conn.rollback();
+			} catch (SQLException e1) {
+				throw new DatabaseException(e1, this.toString(), "update");
+			}
+			throw new DatabaseException(e, this.toString(), "update", updateSql);
+		} catch (Exception e) {
+			throw new ReflectionException(e, this.toString(), "update");
+		}
+	}
+
+	public void insert(Connection conn) throws DatabaseException, ReflectionException {
+		String insertSql = "INSERT INTO " + getTableName() + " " + "(" + getInsertColumnsAsString() + ") " + "VALUES (" + getColumnInsertBindings() + ")";
+
+		try {
+			PreparedStatement stmt = conn.prepareStatement(insertSql);
+			int colCount = 1;
+
+			// bind columns
+			ArrayList<ColumnMapping> cols = getColumnMappings();
+			Iterator<ColumnMapping> it = cols.iterator();
+
+			while (it.hasNext()) {
+				ColumnMapping col = it.next();
+				if (col.isInsertable() && !col.isPrimaryKey()) {
+					String getterName = col.getGetMethodName();
+					String className = getClass().getName();
+					Method getter = null;
+					Object result = null;
+					getter = Class.forName(className).getMethod(getterName, null);
+					result = getter.invoke(this, (Object[]) null);
+
+					switch (col.getColumnType()) {
+					case INTEGER:
+						stmt.setInt(colCount++, ((Integer) result).intValue());
+						break;
+					case LONG:
+						stmt.setLong(colCount++, ((Long) result).longValue());
+						break;
+					case VARCHAR:
+						stmt.setString(colCount++, (String) result);
+						break;
+					case DATE:
+						stmt.setDate(colCount++, (Date) result);
+						break;
+					case TIME:
+						stmt.setTimestamp(colCount++, (Timestamp) result);
+						break;							
+					}
+				}
+			}
+			stmt.execute();
+			stmt.close();
+
+			if (hasSequence()) {
+				String selectIdSql = "SELECT " + getPrimaryKeyColumn().getSequenceName() + ".currval FROM dual";
+				stmt = conn.prepareStatement(selectIdSql);
+				ResultSet rs = stmt.executeQuery();
+				if (rs.next())
+					setId(new Long(rs.getLong(1)));
+				stmt.close();
+			}
+			conn.commit();
+		} catch (SQLException e) {
+			try {
+				conn.rollback();
+			} catch (SQLException e1) {
+				throw new DatabaseException(e1, this.toString(), "insert");
+			}
+			throw new DatabaseException(e, this.toString(), "insert", insertSql);
+		} catch (Exception e) {
+			throw new ReflectionException(e, this.toString(), "insert");
+		}
+	}
+
+	private boolean hasSequence() {
+		return this.getPrimaryKeyColumn() != null && this.getPrimaryKeyColumn().getSequenceName() != null;
+	}
+
+	private String getInsertColumnsAsString() {
+		ArrayList<ColumnMapping> cols = getColumnMappings();
+		String colsAsString = "";
+		Iterator<ColumnMapping> it = cols.iterator();
+		while (it.hasNext()) {
+			ColumnMapping col = it.next();
+
+			if (col.isInsertable()) {
+				if (colsAsString.length() > 0)
+					colsAsString += ", ";
+				if (col.isColumnSubquery())
+					colsAsString += col.getColumnSubquery();
+				else
+					colsAsString += col.getColumnName();
+			}
+		}
+		return colsAsString;
+	}
+
+	public void delete(Connection conn) throws DatabaseException {
+		String deleteSql = "DELETE FROM " + getTableName() + " " + "WHERE " + getPrimaryKeyColumn().getColumnName() + " = ?";
+
+		try {
+			PreparedStatement stmt = conn.prepareStatement(deleteSql);
+			int colCount = 1;
+
+			stmt.setLong(colCount++, id);
+			stmt.execute();
+			stmt.close();
+
+			conn.commit();
+		} catch (SQLException e) {
+			try {
+				conn.rollback();
+			} catch (SQLException e1) {
+				throw new DatabaseException(e1, this.toString(), "delete");
+			}
+			throw new DatabaseException(e, this.toString(), "delete", deleteSql);
+		}
+	}
+
+	private String getColumnInsertBindings() {
+		String columnInsertBindings = "";
+		ArrayList<ColumnMapping> cols = getColumnMappings();
+		Iterator<ColumnMapping> it = cols.iterator();
+
+		while (it.hasNext()) {
+			ColumnMapping col = it.next();
+
+			if (col.isInsertable()) {
+				if (columnInsertBindings.length() > 0)
+					columnInsertBindings += ", ";
+
+				columnInsertBindings += col.getInsertPlaceholder();
+			}
+		}
+
+		return columnInsertBindings;
+	}
+
+	private String getUpdateColumnBindings() {
+		String columnUpdateBindings = "";
+		ArrayList<ColumnMapping> cols = getColumnMappings();
+		Iterator<ColumnMapping> it = cols.iterator();
+
+		while (it.hasNext()) {
+			ColumnMapping col = it.next();
+
+			if (col.isUpdateable()) {
+				if (columnUpdateBindings.length() > 0)
+					columnUpdateBindings += ", ";
+
+				columnUpdateBindings += col.getColumnName();
+				columnUpdateBindings += " = ?";
+			}
+		}
+
+		return columnUpdateBindings;
+	}
+
+	public String getSelectSql() {
+		String selectSql = "SELECT " + getColumnsAsString() + " " + " FROM " + getTableName() + " ";
+
+		return selectSql;
+	}
+
+	private String getColumnsAsString() {
+		ArrayList<ColumnMapping> cols = getColumnMappings();
+		String colsAsString = "";
+		Iterator<ColumnMapping> it = cols.iterator();
+		while (it.hasNext()) {
+			ColumnMapping col = it.next();
+
+			if (colsAsString.length() > 0)
+				colsAsString += ", ";
+			if (col.isColumnSubquery())
+				colsAsString += col.getColumnSubquery();
+			else
+				colsAsString += col.getColumnName();
+		}
+		return colsAsString;
+	}
+
+	private String getSelectSqlSingle() {
+		return getSelectSql() + " WHERE " + getPrimaryKeyColumn().getColumnName() + " = ? ";
+	}
+	
+	protected XMLElement getChildXML(ColumnMapping col) throws SecurityException, NoSuchMethodException, ClassNotFoundException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+		XMLElement childElement = new XMLElement();
+		XMLContent childContent = new XMLContent();
+		String columnValue;
+		
+		String getterName = col.getGetMethodName();
+		String className = getClass().getName();
+		Method getter = null;
+		Object result = null;
+		
+		getter = Class.forName(className).getMethod(getterName, null);
+		result = getter.invoke(this, (Object[]) null);
+		columnValue = result.toString();
+		
+		childElement.setName(col.getColumnName());
+		childElement.appendChild(childContent);
+		childContent.setContent(columnValue);
+		
+		return childElement;			
+	}	
+}

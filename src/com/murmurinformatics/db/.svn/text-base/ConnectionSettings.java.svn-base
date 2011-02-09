@@ -1,0 +1,197 @@
+package com.murmurinformatics.db;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Properties;
+
+/**
+ * Created by IntelliJ IDEA. User: Chris Wise Date: 1-Mar-2007 Time: 8:45:14 AM
+ * To change this template use File | Settings | File Templates.
+ */
+public class ConnectionSettings {
+	private String name;
+	private String hostAddress;
+	private int hostPort = 1521;
+	private String dbInstance;
+	private String dbServiceName;
+	private String dbUser;
+	private String dbPwd;
+	private String securityUser;
+	private String lastUserName;
+	private String propsFile;
+	private String tmpDir;
+	private String webPortalURL;
+
+	public String getHostAddress() {
+		return hostAddress;
+	}
+
+	public void setHostAddress(String hostAddress) {
+		this.hostAddress = hostAddress;
+	}
+
+	public int getHostPort() {
+		return hostPort;
+	}
+
+	public void setHostPort(int hostPort) {
+		this.hostPort = hostPort;
+	}
+
+	public String getDbInstance() {
+		return dbInstance;
+	}
+
+	public void setDbInstance(String dbInstance) {
+		this.dbInstance = dbInstance;
+	}
+
+	public String getDbUser() {
+		return dbUser;
+	}
+
+	public void setDbUser(String dbUser) {
+		this.dbUser = dbUser;
+	}
+
+	public String getDbPwd() {
+		return dbPwd;
+	}
+
+	public void setDbPwd(String dbPwd) {
+		this.dbPwd = dbPwd;
+	}
+
+	public ConnectionSettings() {
+
+	}
+
+	public ConnectionSettings(String name, String hostAddress, int hostPort, String dbInstance, String dbServiceName, String dbUser, String dbPwd, String securityUser) {
+		this.name = name;
+		this.hostAddress = hostAddress;
+		this.hostPort = hostPort;
+		this.dbInstance = dbInstance;
+		this.dbServiceName = dbServiceName;
+		this.dbUser = dbUser;
+		this.dbPwd = dbPwd;
+		this.securityUser = securityUser;
+	}
+
+	public ConnectionSettings(ConnectionSettings dbSettings) {
+		this.name = dbSettings.getName();
+		this.hostAddress = dbSettings.getHostAddress();
+		this.hostPort = dbSettings.getHostPort();
+		this.dbInstance = dbSettings.getDbInstance();
+		this.dbServiceName = dbSettings.getDbServiceName();
+		this.dbUser = dbSettings.getDbUser();
+		this.dbPwd = dbSettings.getDbPwd();
+		this.securityUser = dbSettings.getSecurityUser();
+		this.lastUserName = dbSettings.getLastUserName();
+	}
+
+	public String getConnectString() {
+		String connString;
+
+		if (dbInstance.length() > 0)
+			connString = "jdbc:oracle:thin:@" + hostAddress + ":" + hostPort + ":" + dbInstance;
+		else
+			connString = "jdbc:oracle:thin:@" + hostAddress + ":" + hostPort + ":" + dbServiceName;
+
+		return connString;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void loadSettings(String propsFile) {
+		this.propsFile = propsFile;
+		Properties props = new Properties();
+
+		try {
+			FileInputStream fileInputStream = new FileInputStream(propsFile);
+
+			props.load(fileInputStream);
+		} catch (FileNotFoundException e) {
+			// ignore the fact that the file might not exist
+		} catch (IOException e) {
+
+		}
+
+		name = props.getProperty("name", "name");
+		hostAddress = props.getProperty("host_address", "192.168.1.1");
+		hostPort = Integer.parseInt(props.getProperty("host_port", "1521"));
+		dbInstance = props.getProperty("db_instance", "");
+		dbServiceName = props.getProperty("db_service_name", "");
+		dbUser = props.getProperty("db_user", "egh");
+		dbPwd = props.getProperty("db_password", "password");
+		securityUser = props.getProperty("security_user", "ee_login");
+		lastUserName = props.getProperty("last_user", "username");
+		tmpDir  = props.getProperty("temp_dir", "C:\\Temp");
+		webPortalURL = props.getProperty("portal_url", "http://oee.nrn.nrncan.gc.ca");
+	}
+
+	public void saveSettings() {
+		Properties props = new Properties();
+
+		// write the properties immediately in case the file didn't initially
+		// exist
+		try {
+			FileOutputStream fileOutputStream = new FileOutputStream(propsFile);
+
+			props.setProperty("name", name);
+			props.setProperty("host_address", hostAddress);
+			props.setProperty("host_port", Integer.toString(hostPort));
+			props.setProperty("db_instance", dbInstance);
+			props.setProperty("db_service_name", dbServiceName);
+			props.setProperty("security_user", securityUser);
+			props.setProperty("last_user", lastUserName);
+
+			props.store(fileOutputStream, "These parameters can be modified to point the application at the proper database.");
+		} catch (IOException e) {
+			//
+		}
+	}
+
+	public String toString() {
+		return name;
+	}
+
+	public String getSecurityUser() {
+		return securityUser;
+	}
+
+	public String getLastUserName() {
+		return lastUserName;
+	}
+
+	public void setLastUserName(String lastUserName) {
+		this.lastUserName = lastUserName;
+	}
+
+	public String getDbServiceName() {
+		return dbServiceName;
+	}
+
+	public void setDbServiceName(String dbServiceName) {
+		this.setDbServiceName(dbServiceName);
+	}
+
+	public void setSecurityUser(String securityUser) {
+		this.securityUser = securityUser;
+	}
+
+	public String getTmpDir() {
+		return tmpDir;
+	}
+	
+	public String getWebPortalURL() {
+		return webPortalURL;
+	}
+	
+	public void setWebPortalURL(String webPortalURL) {
+		this.webPortalURL = webPortalURL;
+	}
+}

@@ -29,11 +29,11 @@ public class SAExportApp {
 	
 	private static final String HELP_OPTION = "h";
 	private static final String EXPORT_TYPE_OPTION = "t";
-	private static final String FILENAME_OPTION = "f";
 	private static final String DATE_OPTION = "d";
 	
 	private static final char CUSTOMER_EXPORT = 'c';
 	private static final char TRANSACTION_EXPORT = 't';
+	private static final char ACCOUNT_EXPORT = 'a';
 	
 	private Connection conn = null;
 	private String hostname;
@@ -49,8 +49,7 @@ public class SAExportApp {
 	static{
 		options = new Options();
 		options.addOption(HELP_OPTION, false, "Print help for this application");
-		options.addOption(EXPORT_TYPE_OPTION, true, "Export Type [c=customers, t=transactions]");
-		options.addOption(FILENAME_OPTION, true, "Output filename");
+		options.addOption(EXPORT_TYPE_OPTION, true, "Export Type [c=customers, t=transactions, a=accounts]");
 		options.addOption(DATE_OPTION, true, "Date from");		
 	}	
 	
@@ -71,9 +70,44 @@ public class SAExportApp {
 			break;
 		case TRANSACTION_EXPORT:
 			saExportApp.exportTransactions();
+			break;
+		case ACCOUNT_EXPORT:
+			saExportApp.exportAccounts();			
+			break;
 		}
 
 		saExportApp.disconnectFromDatabase();
+	}
+
+	private void exportAccounts() {
+		try {
+			ArrayList<Account> accounts = Account.getAccounts(conn);
+			String timestamp;
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddkkmmss");
+			XMLElement rootNode = new XMLElement();
+			rootNode.setName("accounts");
+			
+			// add addresses and contacts to customers before getting XML
+			for(Account account : accounts)
+				rootNode.appendChild(account.getXML(false));
+			
+			timestamp = sdf.format(new Date());
+			exportFile(String.format("accounts_%s.xml", timestamp), rootNode);
+		} catch (DatabaseException e) {
+			System.out.println(String.format("Database exception: %s", e.getMessage()));
+			return;
+		} catch (ReflectionException e) {
+			System.out.println(String.format("Reflection exception: %s", e.getMessage()));
+			return;
+		} catch (NoSuchMethodException e) {
+			System.err.println(String.format("NoSuchMethodException: " + e.getMessage()));
+		} catch (ClassNotFoundException e) {
+			System.err.println(String.format("ClassNotFoundException: " + e.getMessage()));
+		} catch (IllegalAccessException e) {
+			System.err.println(String.format("IllegalAccessException: " + e.getMessage()));
+		} catch (InvocationTargetException e) {
+			System.err.println(String.format("InvocationTargetException: " + e.getMessage()));
+		}
 	}
 
 	private void loadArgs(String[] args) {
@@ -98,26 +132,16 @@ public class SAExportApp {
 			System.exit(1);
 		}
 		
-		if (!cmd.hasOption(FILENAME_OPTION)) {
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(USAGE, options);
-			System.exit(1);
-		}		
-		
 		if (cmd.hasOption(EXPORT_TYPE_OPTION)){
 			String exportTypeString = cmd.getOptionValue(EXPORT_TYPE_OPTION);
 			
 			if(exportTypeString.length()==1)
 				exportType = exportTypeString.charAt(0);
-			if(!(exportType==CUSTOMER_EXPORT || exportType==TRANSACTION_EXPORT)) {
+			if(!(exportType==CUSTOMER_EXPORT || exportType==TRANSACTION_EXPORT || exportType==ACCOUNT_EXPORT)) {
 				HelpFormatter formatter = new HelpFormatter();
 				formatter.printHelp("Invalid export type specified", options);
 				System.exit(1);
 			}
-		}
-
-		if (cmd.hasOption(FILENAME_OPTION)){
-			outputFilename = cmd.getOptionValue(FILENAME_OPTION);
 		}
 
 		if (cmd.hasOption(DATE_OPTION)){
@@ -164,8 +188,34 @@ public class SAExportApp {
 	}
 	
 	private void exportTransactions() {
-		// TODO Auto-generated method stub
-		
+		try {
+			ArrayList<JournalEntry> entries = JournalEntry.getJournalEntries(conn);
+			String timestamp;
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddkkmmss");
+			XMLElement rootNode = new XMLElement();
+			rootNode.setName("journal_entries");
+			
+			// add addresses and contacts to customers before getting XML
+			for(JournalEntry je : entries)
+				rootNode.appendChild(je.getXML(false));
+			
+			timestamp = sdf.format(new Date());
+			exportFile(String.format("transactions_%s.xml", timestamp), rootNode);
+		} catch (DatabaseException e) {
+			System.out.println(String.format("Database exception: %s", e.getMessage()));
+			return;
+		} catch (ReflectionException e) {
+			System.out.println(String.format("Reflection exception: %s", e.getMessage()));
+			return;
+		} catch (NoSuchMethodException e) {
+			System.err.println(String.format("NoSuchMethodException: " + e.getMessage()));
+		} catch (ClassNotFoundException e) {
+			System.err.println(String.format("ClassNotFoundException: " + e.getMessage()));
+		} catch (IllegalAccessException e) {
+			System.err.println(String.format("IllegalAccessException: " + e.getMessage()));
+		} catch (InvocationTargetException e) {
+			System.err.println(String.format("InvocationTargetException: " + e.getMessage()));
+		}
 	}
 
 	private void exportCustomers() {

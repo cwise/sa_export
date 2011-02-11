@@ -7,7 +7,6 @@ import com.murmurinformatics.db.AbstractEntity;
 import fr.dyade.koala.xml.domlight.XMLElement;
 
 public abstract class Address extends AbstractEntity {
-	private long saCompanyId;
 	private String street1;
 	private String street2;
 	private String city;
@@ -28,14 +27,6 @@ public abstract class Address extends AbstractEntity {
 		return "address";
 	}			
 	
-	public long getSaCompanyId() {
-		return saCompanyId;
-	}
-
-	public void setSaCompanyId(Long saCompanyId) {
-		this.saCompanyId = saCompanyId.longValue();
-	}
-
 	public String getStreet1() {
 		return street1;
 	}

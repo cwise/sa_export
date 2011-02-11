@@ -1,0 +1,2 @@
+Main-Class: ca.canwea.SAExportApp
+Class-Path: ./lib/commons-cli-1.2.jar ./lib/domlight-1.0.jar ./lib/mysql-connector-java-5.1.14-bin.jar ./lib/xercesImpl.jar ./lib/xml-apis.jar ./lib/xmlParserAPIs.jar ./sa_export.jar

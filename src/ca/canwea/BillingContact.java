@@ -17,7 +17,7 @@ public class BillingContact extends Contact {
 	protected ArrayList<ColumnMapping> getColumnMappings() {
 		ArrayList<ColumnMapping> cols = new ArrayList<ColumnMapping>();
 
-		cols.add(new ColumnMapping("lId", "saCompanyId", ColumnType.LONG));		
+		cols.add(new ColumnMapping("lId", "id", ColumnType.LONG));		
 		cols.add(new ColumnMapping("sPhone1", "phone1", ColumnType.VARCHAR));
 		cols.add(new ColumnMapping("sPhone2", "phone2", ColumnType.VARCHAR));
 		cols.add(new ColumnMapping("sFax", "phoneFax", ColumnType.VARCHAR));

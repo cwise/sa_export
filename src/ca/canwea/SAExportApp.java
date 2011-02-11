@@ -11,7 +11,6 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Properties;
 
 import org.apache.commons.cli.*;
@@ -44,8 +43,8 @@ public class SAExportApp {
 	private int port;
 	
 	private char exportType = ' ';
-	private String outputFilename;
-	private String dateFrom;
+	private String outputFilename = "";
+	private String dateFrom = "";
 	
 	static{
 		options = new Options();
@@ -182,7 +181,6 @@ public class SAExportApp {
 			rootNode.setName("customers");
 			
 			// add addresses and contacts to customers before getting XML
-			
 			for(Customer customer : customers) {
 				customer.addAddresses(billingAddresses);
 				customer.addContacts(billingContacts);

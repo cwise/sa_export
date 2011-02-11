@@ -7,7 +7,6 @@ import com.murmurinformatics.db.AbstractEntity;
 import fr.dyade.koala.xml.domlight.XMLElement;
 
 public abstract class Contact extends AbstractEntity {
-	private long saCompanyId;
 	private String name;
 	private String emailAddress;
 	private String phone1;
@@ -18,13 +17,6 @@ public abstract class Contact extends AbstractEntity {
 	protected String getXMLTag() {
 		return "contact";
 	}			
-	
-	public long getSaCompanyId() {
-		return saCompanyId;
-	}
-	public void setSaCompanyId(Long saCompanyId) {
-		this.saCompanyId = saCompanyId.longValue();
-	}
 	public String getName() {
 		return name;
 	}

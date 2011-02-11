@@ -17,7 +17,6 @@ import com.murmurinformatics.exceptions.ReflectionException;
 import fr.dyade.koala.xml.domlight.XMLElement;
 
 public class Customer extends AbstractEntity {
-	private long saCompanyId;
 	private String name;
 	private String website;
 	private ArrayList<Address> addresses = new ArrayList<Address>();
@@ -27,7 +26,7 @@ public class Customer extends AbstractEntity {
 	protected ArrayList<ColumnMapping> getColumnMappings() {
 		ArrayList<ColumnMapping> cols = new ArrayList<ColumnMapping>();
 
-		cols.add(new ColumnMapping("lId", "saCompanyId", ColumnType.LONG));
+		cols.add(new ColumnMapping("lId", "id", ColumnType.LONG));
 		cols.add(new ColumnMapping("sName", "name", ColumnType.VARCHAR));
 		cols.add(new ColumnMapping("sWebSite", "website", ColumnType.VARCHAR));
 		
@@ -44,14 +43,6 @@ public class Customer extends AbstractEntity {
 		return "customer";
 	}		
 	
-	public long getSaCompanyId() {
-		return saCompanyId;
-	}
-
-	public void setSaCompanyId(Long saCompanyId) {
-		this.saCompanyId = saCompanyId.longValue();
-	}
-
 	public String getName() {
 		return name;
 	}
@@ -98,7 +89,7 @@ public class Customer extends AbstractEntity {
 		while(it.hasNext()) {
 			Address address = it.next();
 			
-			if(address.getSaCompanyId()==this.saCompanyId)
+			if(address.getId()==this.id)
 				this.addresses.add(address);
 		}
 	}
@@ -109,7 +100,7 @@ public class Customer extends AbstractEntity {
 		while(it.hasNext()) {
 			Contact contact = it.next();
 			
-			if(contact.getSaCompanyId()==this.saCompanyId)
+			if(contact.getId()==this.id)
 				this.contacts.add(contact);
 		}
 	}

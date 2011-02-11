@@ -21,7 +21,7 @@ public class ShippingAddress extends Address {
 	protected ArrayList<ColumnMapping> getColumnMappings() {
 		ArrayList<ColumnMapping> cols = new ArrayList<ColumnMapping>();
 	
-		cols.add(new ColumnMapping("lCustId", "saCompanyId", ColumnType.LONG));
+		cols.add(new ColumnMapping("lCustId", "id", ColumnType.LONG));
 		cols.add(new ColumnMapping("sShipStrt1", "street1", ColumnType.VARCHAR));
 		cols.add(new ColumnMapping("sShipStrt2", "street2", ColumnType.VARCHAR));
 		cols.add(new ColumnMapping("sShipCity", "city", ColumnType.VARCHAR));

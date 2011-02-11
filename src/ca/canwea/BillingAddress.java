@@ -11,8 +11,6 @@ import com.murmurinformatics.db.ColumnType;
 import com.murmurinformatics.exceptions.DatabaseException;
 import com.murmurinformatics.exceptions.ReflectionException;
 
-import fr.dyade.koala.xml.domlight.XMLElement;
-
 public class BillingAddress extends Address {
 	@Override
 	protected String getTableName() {
@@ -28,7 +26,7 @@ public class BillingAddress extends Address {
 	protected ArrayList<ColumnMapping> getColumnMappings() {
 		ArrayList<ColumnMapping> cols = new ArrayList<ColumnMapping>();
 	
-		cols.add(new ColumnMapping("lId", "saCompanyId", ColumnType.LONG));
+		cols.add(new ColumnMapping("lId", "id", ColumnType.LONG));
 		cols.add(new ColumnMapping("sStreet1", "street1", ColumnType.VARCHAR));
 		cols.add(new ColumnMapping("sStreet2", "street2", ColumnType.VARCHAR));
 		cols.add(new ColumnMapping("sCity", "city", ColumnType.VARCHAR));

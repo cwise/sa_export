@@ -17,7 +17,7 @@ public class ShippingContact extends Contact {
 	protected ArrayList<ColumnMapping> getColumnMappings() {
 		ArrayList<ColumnMapping> cols = new ArrayList<ColumnMapping>();
 
-		cols.add(new ColumnMapping("lCustId", "saCompanyId", ColumnType.LONG));		
+		cols.add(new ColumnMapping("lCustId", "id", ColumnType.LONG));		
 		cols.add(new ColumnMapping("sShipPhn1", "phone1", ColumnType.VARCHAR));
 		cols.add(new ColumnMapping("sShipPhn2", "phone2", ColumnType.VARCHAR));
 		cols.add(new ColumnMapping("sShipFax", "phoneFax", ColumnType.VARCHAR));

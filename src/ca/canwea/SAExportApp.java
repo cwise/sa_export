@@ -7,19 +7,27 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 
 import com.murmurinformatics.exceptions.DatabaseException;
 import com.murmurinformatics.exceptions.ReflectionException;
 
-import fr.dyade.koala.xml.domlight.XMLElement;
-import fr.dyade.koala.xml.domlight.XMLElementSerializer;
+import ca.murmurinfo.domlight.XMLElement;
+import ca.murmurinfo.domlight.XMLElementSerializer;
 
 
 public class SAExportApp {
@@ -30,10 +38,12 @@ public class SAExportApp {
 	private static final String HELP_OPTION = "h";
 	private static final String EXPORT_TYPE_OPTION = "t";
 	private static final String DATE_OPTION = "d";
+	private static final String FY_OPTION = "f";
 	
 	private static final char CUSTOMER_EXPORT = 'c';
 	private static final char TRANSACTION_EXPORT = 't';
 	private static final char ACCOUNT_EXPORT = 'a';
+	private static final char PROJECT_EXPORT = 'p';
 	
 	private Connection conn = null;
 	private String hostname;
@@ -43,14 +53,15 @@ public class SAExportApp {
 	private int port;
 	
 	private char exportType = ' ';
-	private String outputFilename = "";
 	private String dateFrom = "";
+	private String fy = "";
 	
 	static{
 		options = new Options();
 		options.addOption(HELP_OPTION, false, "Print help for this application");
-		options.addOption(EXPORT_TYPE_OPTION, true, "Export Type [c=customers, t=transactions, a=accounts]");
-		options.addOption(DATE_OPTION, true, "Date from");		
+		options.addOption(EXPORT_TYPE_OPTION, true, "Export Type [c=customers, t=transactions, a=accounts, p=projects]");
+		options.addOption(DATE_OPTION, true, "Date to export (current FY)");		
+		options.addOption(FY_OPTION, true, "FY to export");		
 	}	
 	
 	public static void main(String[] args) {
@@ -74,6 +85,9 @@ public class SAExportApp {
 		case ACCOUNT_EXPORT:
 			saExportApp.exportAccounts();			
 			break;
+		case PROJECT_EXPORT:
+			saExportApp.exportProjects();			
+			break;			
 		}
 
 		saExportApp.disconnectFromDatabase();
@@ -87,7 +101,6 @@ public class SAExportApp {
 			XMLElement rootNode = new XMLElement();
 			rootNode.setName("accounts");
 			
-			// add addresses and contacts to customers before getting XML
 			for(Account account : accounts)
 				rootNode.appendChild(account.getXML(false));
 			
@@ -110,6 +123,36 @@ public class SAExportApp {
 		}
 	}
 
+	private void exportProjects() {
+		try {
+			ArrayList<Project> projects = Project.getProjects(conn);
+			String timestamp;
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddkkmmss");
+			XMLElement rootNode = new XMLElement();
+			rootNode.setName("projects");
+			
+			for(Project project : projects)
+				rootNode.appendChild(project.getXML(false));
+			
+			timestamp = sdf.format(new Date());
+			exportFile(String.format("projects_%s.xml", timestamp), rootNode);
+		} catch (DatabaseException e) {
+			System.out.println(String.format("Database exception: %s", e.getMessage()));
+			return;
+		} catch (ReflectionException e) {
+			System.out.println(String.format("Reflection exception: %s", e.getMessage()));
+			return;
+		} catch (NoSuchMethodException e) {
+			System.err.println(String.format("NoSuchMethodException: " + e.getMessage()));
+		} catch (ClassNotFoundException e) {
+			System.err.println(String.format("ClassNotFoundException: " + e.getMessage()));
+		} catch (IllegalAccessException e) {
+			System.err.println(String.format("IllegalAccessException: " + e.getMessage()));
+		} catch (InvocationTargetException e) {
+			System.err.println(String.format("InvocationTargetException: " + e.getMessage()));
+		}
+	}	
+	
 	private void loadArgs(String[] args) {
 		CommandLineParser parser = new PosixParser();
 		try {
@@ -137,16 +180,57 @@ public class SAExportApp {
 			
 			if(exportTypeString.length()==1)
 				exportType = exportTypeString.charAt(0);
-			if(!(exportType==CUSTOMER_EXPORT || exportType==TRANSACTION_EXPORT || exportType==ACCOUNT_EXPORT)) {
+			if(!(exportType==CUSTOMER_EXPORT || exportType==TRANSACTION_EXPORT || exportType==ACCOUNT_EXPORT || exportType==PROJECT_EXPORT)) {
 				HelpFormatter formatter = new HelpFormatter();
 				formatter.printHelp("Invalid export type specified", options);
 				System.exit(1);
 			}
 		}
 
+		// now discard mismatched options
+		if(exportType!=TRANSACTION_EXPORT && cmd.hasOption(DATE_OPTION)) {
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("Cannot specify a date with unless transaction export", options);
+			System.exit(1);			
+		}
+	
+		if(exportType!=TRANSACTION_EXPORT && cmd.hasOption(FY_OPTION)) {
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("Cannot specify an FY with unless transaction export", options);
+			System.exit(1);			
+		}		
+		
+		if(exportType==TRANSACTION_EXPORT && cmd.hasOption(DATE_OPTION) && cmd.hasOption(FY_OPTION)) {
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("Cannot specify both date and FY option", options);
+			System.exit(1);			
+		}		
+		
+		if(exportType==TRANSACTION_EXPORT && !cmd.hasOption(DATE_OPTION) && !cmd.hasOption(FY_OPTION)) {
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("Must specify either a date or FY option when transaction export", options);
+			System.exit(1);			
+		}				
+		
 		if (cmd.hasOption(DATE_OPTION)){
 			dateFrom = cmd.getOptionValue(DATE_OPTION);
+			
+			// validate date
 		}
+		
+		if (cmd.hasOption(FY_OPTION)){
+			fy = cmd.getOptionValue(FY_OPTION);
+			
+			// validate FY (current, last, year)
+			if(!(fy.equals("current") || fy.equals("last"))) {
+				if(new Integer(fy).intValue() < 2000) {
+					HelpFormatter formatter = new HelpFormatter();
+					formatter.printHelp("Invalid FY specified [current, previous, year]", options);
+					System.exit(1);						
+				}				
+				
+			}
+		}		
 	}	
 	
 	private void loadSettings() {
@@ -189,9 +273,43 @@ public class SAExportApp {
 	
 	private void exportTransactions() {
 		try {
-			ArrayList<JournalEntry> entries = JournalEntry.getJournalEntries(conn);
+			// if FY is not current or last but is specified
+			if(!fy.isEmpty()) {
+				if(!(fy.equals("current") || fy.equals("last"))) {
+					// lookup year in FY table
+					PreparedStatement stmt;
+					try {
+						stmt = conn.prepareStatement("SELECT nHistSet FROM tActHDat WHERE sYearDesc = ?");
+						
+						stmt.setString(1, fy);
+						ResultSet rs = stmt.executeQuery();
+						
+						if(rs.next()) {
+							int historySet = rs.getInt(1);
+							
+							// reformat the FY as the history set
+							fy = String.format("%02d", historySet);
+						} 
+						else {
+							System.err.print(String.format("Couldn't find history set for this FY"));
+							System.exit(1);						
+						}
+						rs.close();
+						stmt.close();						
+					} catch (SQLException e) {
+						System.err.print(String.format("Failed to connect to database: %s", e.getMessage()));
+						System.exit(1);
+
+					}
+				}		
+			} 
+			else {
+				fy = "current";
+			}
+			
+			ArrayList<JournalEntry> entries = JournalEntry.getJournalEntries(conn, fy, dateFrom);
 			String timestamp;
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddkkmmss");
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
 			XMLElement rootNode = new XMLElement();
 			rootNode.setName("journal_entries");
 			
@@ -200,6 +318,8 @@ public class SAExportApp {
 				rootNode.appendChild(je.getXML(false));
 			
 			timestamp = sdf.format(new Date());
+			if(fy.length() > 0)
+				timestamp = fy;
 			exportFile(String.format("transactions_%s.xml", timestamp), rootNode);
 		} catch (DatabaseException e) {
 			System.out.println(String.format("Database exception: %s", e.getMessage()));
@@ -281,7 +401,7 @@ public class SAExportApp {
 			System.err.println(String.format("IOException: " + e.getMessage()));
 		}
 	}
-
+	
 	private void xmlToStream(FileOutputStream fs, XMLElement rootNode) {
 		XMLElementSerializer ser = new XMLElementSerializer(fs);
 

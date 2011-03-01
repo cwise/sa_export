@@ -15,7 +15,7 @@ import com.murmurinformatics.db.ColumnType;
 import com.murmurinformatics.exceptions.DatabaseException;
 import com.murmurinformatics.exceptions.ReflectionException;
 
-import fr.dyade.koala.xml.domlight.XMLElement;
+import ca.murmurinfo.domlight.XMLElement;
 
 public class JournalEntry extends AbstractEntity {
 	private Date entryDate;
@@ -23,7 +23,13 @@ public class JournalEntry extends AbstractEntity {
 	private long custId;
 	private long amount;
 	private String invoice;
+	private long projId;
+	private String fy;
 	
+	public JournalEntry(String fy) {
+		this.fy = fy;
+	}
+
 	@Override
 	protected ArrayList<XMLElement> getChildXMLElements()
 			throws SecurityException, IllegalArgumentException,
@@ -38,9 +44,10 @@ public class JournalEntry extends AbstractEntity {
 	protected ArrayList<ColumnMapping> getColumnMappings() {
 		ArrayList<ColumnMapping> cols = new ArrayList<ColumnMapping>();
 
-		ColumnSubquery dateSubquery = new ColumnSubquery("dtJourDate", "dtJourDate", "tJourEnt", "lJEntId", "lId");
-		ColumnSubquery custIdSubquery = new ColumnSubquery("lRecId", "lRecId", "tJourEnt", "lJEntId", "lId");
-		ColumnSubquery sourceSubquery = new ColumnSubquery("sSource", "sSource", "tJourEnt", "lJEntId", "lId");
+		ColumnSubquery dateSubquery = new ColumnSubquery("dtJourDate", "dtJourDate", getJETableName(), "lId", getTableName(), "lJEntId");
+		ColumnSubquery custIdSubquery = new ColumnSubquery("lRecId", "lRecId", getJETableName(), "lId", getTableName(), "lJEntId");
+		ColumnSubquery sourceSubquery = new ColumnSubquery("sSource", "sSource", getJETableName(), "lId", getTableName(), "lJEntId");
+		ColumnSubquery projectSubquery = new ColumnSubquery("lPrjId", "lPrjId", getJEProjectTableName(), "lJEntId", getTableName(), "lJEntId");
 		
 		cols.add(new ColumnMapping("lJEntId", "id", ColumnType.LONG));		
 		cols.add(new ColumnMapping("dtJourDate", "entryDate", ColumnType.DATE, dateSubquery));
@@ -48,15 +55,51 @@ public class JournalEntry extends AbstractEntity {
 		cols.add(new ColumnMapping("lRecId", "custId", ColumnType.LONG, custIdSubquery));
 		cols.add(new ColumnMapping("dAmount", "amount", ColumnType.LONG));
 		cols.add(new ColumnMapping("sSource", "invoice", ColumnType.VARCHAR, sourceSubquery));
+		cols.add(new ColumnMapping("lPrjId", "projId", ColumnType.LONG, projectSubquery));
 
 		return cols;
 	}
 
 	@Override
 	protected String getTableName() {
-		return "tJEntAct";
+		String tableName = "tJEntAct";
+		
+		if(fy.equals("current"))
+			tableName = "tJEntAct";
+		else if(fy.equals("last"))
+			tableName = "tJEntLYA";
+		else
+			tableName = String.format("tJEAH%s", fy);
+		
+		return tableName;
 	}
 
+	protected String getJETableName() {
+		String tableName = "tJourEnt";
+
+		if(fy.equals("current"))
+			tableName = "tJourEnt";
+		else if(fy.equals("last"))
+			tableName = "tJEntLY";
+		else
+			tableName = String.format("tJEH%s", fy);		
+	
+		return tableName;
+	}	
+	
+	protected String getJEProjectTableName() {
+		String tableName = "tJEntPrj";
+
+		if(fy.equals("current"))
+			tableName = "tJEntPrj";
+		else if(fy.equals("last"))
+			tableName = "tJEntLYP";
+		else
+			tableName = String.format("tJEPH%s", fy);		
+			
+		return tableName;
+	}		
+	
 	@Override
 	protected String getTypeAttribute() {
 		return null;
@@ -107,20 +150,27 @@ public class JournalEntry extends AbstractEntity {
 		this.invoice = invoice;
 	}
 
-	// TODO: add date support
-	public static ArrayList<JournalEntry> getJournalEntries(Connection conn) throws DatabaseException, ReflectionException {
-		String whereClause = "lJEntId IN (SELECT lId FROM tJourEnt WHERE nModule = 2 AND nType = 1)";
-		String selectSql = new JournalEntry().getSelectSql() + " WHERE " + whereClause;
+	public static ArrayList<JournalEntry> getJournalEntries(Connection conn, String fy, String dateFrom) throws DatabaseException, ReflectionException {
+		if(fy.isEmpty())
+			fy="current";
+		
+		JournalEntry baseJE = new JournalEntry(fy);
+		
+		String whereClause = "lJEntId IN (SELECT lId FROM " + baseJE.getJETableName() + " WHERE nModule = 2 AND nType = 1) AND lAcctId LIKE '4%'";
+		String selectSql = baseJE.getSelectSql() + " WHERE " + whereClause;
+		
+		// TODO: add date filter
+		
 		System.out.println(selectSql);
 		ArrayList<JournalEntry> entries = new ArrayList<JournalEntry>();
-
+		
 		PreparedStatement statement = null;
 		try {
 			statement = conn.prepareStatement(selectSql);
 
 			ResultSet rs = statement.executeQuery();
 			while (rs.next()) {
-				JournalEntry entry = new JournalEntry();
+				JournalEntry entry = new JournalEntry(fy);
 
 				entry.mapResultSet(rs);
 				entries.add(entry);
@@ -132,5 +182,13 @@ public class JournalEntry extends AbstractEntity {
 		}
 
 		return entries;
-	}		
+	}
+
+	public void setProjId(Long projId) {
+		this.projId = projId.longValue();
+	}
+
+	public long getProjId() {
+		return projId;
+	}
 }

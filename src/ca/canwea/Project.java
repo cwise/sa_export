@@ -15,13 +15,12 @@ import com.murmurinformatics.db.ColumnType;
 import com.murmurinformatics.exceptions.DatabaseException;
 import com.murmurinformatics.exceptions.ReflectionException;
 
-public class Account extends AbstractEntity {
+public class Project extends AbstractEntity {
 	private String name;
-	private String acctNumber;
 	
-	public static ArrayList<Account> getAccounts(Connection conn) throws DatabaseException, ReflectionException {
-		String selectSql = new Account().getSelectSql();
-		ArrayList<Account> accounts = new ArrayList<Account>();
+	public static ArrayList<Project> getProjects(Connection conn) throws DatabaseException, ReflectionException {
+		String selectSql = new Project().getSelectSql();
+		ArrayList<Project> projects = new ArrayList<Project>();
 
 		PreparedStatement statement = null;
 		try {
@@ -29,25 +28,25 @@ public class Account extends AbstractEntity {
 
 			ResultSet rs = statement.executeQuery();
 			while (rs.next()) {
-				Account account = new Account();
+				Project project = new Project();
 
-				account.mapResultSet(rs);
-				accounts.add(account);
+				project.mapResultSet(rs);
+				projects.add(project);
 			}
 			rs.close();
 			statement.close();
 		} catch (SQLException e) {
-			throw new DatabaseException(e, "Account", "getAccounts");
+			throw new DatabaseException(e, "Project", "getProject");
 		}
 
-		return accounts;
+		return projects;
 	}
 
 	@Override
 	protected ArrayList<ColumnMapping> getColumnMappings() {
 		ArrayList<ColumnMapping> cols = new ArrayList<ColumnMapping>();
 
-		cols.add(new ColumnMapping("lId", "acctNumber", ColumnType.VARCHAR));
+		cols.add(new ColumnMapping("lId", "id", ColumnType.LONG));
 		cols.add(new ColumnMapping("sName", "name", ColumnType.VARCHAR));
 		
 		return cols;
@@ -55,7 +54,7 @@ public class Account extends AbstractEntity {
 
 	@Override
 	protected String getTableName() {
-		return "tAccount";
+		return "tProject";
 	}
 
 	@Override
@@ -65,7 +64,7 @@ public class Account extends AbstractEntity {
 
 	@Override
 	protected String getXMLTag() {
-		return "account";
+		return "project";
 	}
 
 	public String getName() {
@@ -74,14 +73,6 @@ public class Account extends AbstractEntity {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public void setAcctNumber(String acctNumber) {
-		this.acctNumber = acctNumber;
-	}
-
-	public String getAcctNumber() {
-		return acctNumber;
 	}
 
 	@Override

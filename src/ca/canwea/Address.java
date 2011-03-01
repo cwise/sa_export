@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import com.murmurinformatics.db.AbstractEntity;
 
-import fr.dyade.koala.xml.domlight.XMLElement;
+import ca.murmurinfo.domlight.XMLElement;
 
 public abstract class Address extends AbstractEntity {
 	private String street1;

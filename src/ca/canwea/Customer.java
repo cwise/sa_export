@@ -14,7 +14,7 @@ import com.murmurinformatics.db.ColumnType;
 import com.murmurinformatics.exceptions.DatabaseException;
 import com.murmurinformatics.exceptions.ReflectionException;
 
-import fr.dyade.koala.xml.domlight.XMLElement;
+import ca.murmurinfo.domlight.XMLElement;
 
 public class Customer extends AbstractEntity {
 	private String name;
@@ -120,5 +120,5 @@ public class Customer extends AbstractEntity {
 	@Override
 	protected String getTypeAttribute() {
 		return null;
-	}		
+	}	
 }

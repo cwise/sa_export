@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import com.murmurinformatics.db.AbstractEntity;
 
-import fr.dyade.koala.xml.domlight.XMLElement;
+import ca.murmurinfo.domlight.XMLElement;
 
 public abstract class Contact extends AbstractEntity {
 	private String name;
@@ -53,6 +53,6 @@ public abstract class Contact extends AbstractEntity {
 		ArrayList<XMLElement> emptyList = new ArrayList<XMLElement>();
 		
 		return emptyList;
-	}		
+	}				
 }
 

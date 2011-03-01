@@ -14,8 +14,8 @@ import java.util.Iterator;
 import com.murmurinformatics.exceptions.DatabaseException;
 import com.murmurinformatics.exceptions.ReflectionException;
 
-import fr.dyade.koala.xml.domlight.XMLContent;
-import fr.dyade.koala.xml.domlight.XMLElement;
+import ca.murmurinfo.domlight.XMLContent;
+import ca.murmurinfo.domlight.XMLElement;
 
 public abstract class AbstractEntity {
 	protected long id = 0;

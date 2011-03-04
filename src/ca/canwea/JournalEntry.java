@@ -150,16 +150,16 @@ public class JournalEntry extends AbstractEntity {
 		this.invoice = invoice;
 	}
 
-	public static ArrayList<JournalEntry> getJournalEntries(Connection conn, String fy, String dateFrom) throws DatabaseException, ReflectionException {
+	public static ArrayList<JournalEntry> getJournalEntries(Connection conn, String fy, Date dateFrom) throws DatabaseException, ReflectionException {
 		if(fy.isEmpty())
 			fy="current";
 		
 		JournalEntry baseJE = new JournalEntry(fy);
-		
-		String whereClause = "lJEntId IN (SELECT lId FROM " + baseJE.getJETableName() + " WHERE nModule = 2 AND nType = 1) AND lAcctId LIKE '4%'";
+		String jeSubquery = "SELECT lId FROM " + baseJE.getJETableName() + " WHERE nModule = 2 AND nType = 1";
+		if(dateFrom!=null)
+			jeSubquery += " AND dtJourDate = ?";
+		String whereClause = "lJEntId IN (" + jeSubquery +  ") AND lAcctId LIKE '4%' ";
 		String selectSql = baseJE.getSelectSql() + " WHERE " + whereClause;
-		
-		// TODO: add date filter
 		
 		System.out.println(selectSql);
 		ArrayList<JournalEntry> entries = new ArrayList<JournalEntry>();
@@ -168,6 +168,9 @@ public class JournalEntry extends AbstractEntity {
 		try {
 			statement = conn.prepareStatement(selectSql);
 
+			if(dateFrom!=null)
+				statement.setDate(1, dateFrom);
+			
 			ResultSet rs = statement.executeQuery();
 			while (rs.next()) {
 				JournalEntry entry = new JournalEntry(fy);

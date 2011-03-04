@@ -53,7 +53,7 @@ public class SAExportApp {
 	private int port;
 	
 	private char exportType = ' ';
-	private String dateFrom = "";
+	private Date dateFrom = null;
 	private String fy = "";
 	
 	static{
@@ -213,9 +213,17 @@ public class SAExportApp {
 		}				
 		
 		if (cmd.hasOption(DATE_OPTION)){
-			dateFrom = cmd.getOptionValue(DATE_OPTION);
+			String dateString = cmd.getOptionValue(DATE_OPTION);
 			
 			// validate date
+			 SimpleDateFormat fmt = new SimpleDateFormat("yyyy/MM/dd");
+		     try {
+				dateFrom = fmt.parse(dateString);
+			} catch (java.text.ParseException e) {
+				HelpFormatter formatter = new HelpFormatter();
+				formatter.printHelp("Invalid date specified [yyyy/MM/dd]", options);
+				System.exit(1);		
+			}
 		}
 		
 		if (cmd.hasOption(FY_OPTION)){
@@ -307,7 +315,12 @@ public class SAExportApp {
 				fy = "current";
 			}
 			
-			ArrayList<JournalEntry> entries = JournalEntry.getJournalEntries(conn, fy, dateFrom);
+			java.sql.Date dateFromSql = null;
+			if(dateFrom!=null)
+				dateFromSql = new java.sql.Date(dateFrom.getTime());
+				
+			
+			ArrayList<JournalEntry> entries = JournalEntry.getJournalEntries(conn, fy, dateFromSql);
 			String timestamp;
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
 			XMLElement rootNode = new XMLElement();
@@ -318,7 +331,9 @@ public class SAExportApp {
 				rootNode.appendChild(je.getXML(false));
 			
 			timestamp = sdf.format(new Date());
-			if(fy.length() > 0)
+			if(dateFrom!=null)
+				timestamp = sdf.format(dateFrom);
+			else if(fy.length() > 0)
 				timestamp = fy;
 			exportFile(String.format("transactions_%s.xml", timestamp), rootNode);
 		} catch (DatabaseException e) {

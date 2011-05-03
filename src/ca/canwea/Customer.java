@@ -61,11 +61,12 @@ public class Customer extends AbstractEntity {
 
 	public static ArrayList<Customer> getCustomers(Connection conn) throws DatabaseException, ReflectionException {
 		String selectSql = new Customer().getSelectSql();
+		String whereClause = " WHERE dtLastSal >= str_to_date((YEAR(CurDate())-2) + '-01-01', '%Y-%m-%d')";
 		ArrayList<Customer> customers = new ArrayList<Customer>();
 
 		PreparedStatement statement = null;
 		try {
-			statement = conn.prepareStatement(selectSql);
+			statement = conn.prepareStatement(selectSql + whereClause);
 
 			ResultSet rs = statement.executeQuery();
 			while (rs.next()) {

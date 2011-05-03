@@ -36,6 +36,8 @@ public class SAExportApp {
 	private static Options options = null; 
 	
 	private static final String HELP_OPTION = "h";
+	private static final String PATH_OPTION = "p";
+	private static final String PROPS_OPTION = "props";
 	private static final String EXPORT_TYPE_OPTION = "t";
 	private static final String DATE_OPTION = "d";
 	private static final String FY_OPTION = "f";
@@ -52,6 +54,8 @@ public class SAExportApp {
 	private String database;
 	private int port;
 	
+	private String propertiesFile = null;
+	private String exportPath = null;
 	private char exportType = ' ';
 	private Date dateFrom = null;
 	private String fy = "";
@@ -59,6 +63,8 @@ public class SAExportApp {
 	static{
 		options = new Options();
 		options.addOption(HELP_OPTION, false, "Print help for this application");
+		options.addOption(PATH_OPTION, true, "Path to save output");
+		options.addOption(PROPS_OPTION, true, "Properties file");
 		options.addOption(EXPORT_TYPE_OPTION, true, "Export Type [c=customers, t=transactions, a=accounts, p=projects]");
 		options.addOption(DATE_OPTION, true, "Date to export (current FY)");		
 		options.addOption(FY_OPTION, true, "FY to export");		
@@ -168,6 +174,20 @@ public class SAExportApp {
 			formatter.printHelp(USAGE, options);
 			System.exit(1);
 		}		
+
+		if (!cmd.hasOption(PATH_OPTION)) {
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(USAGE, options);
+			System.exit(1);
+		} 
+		exportPath = cmd.getOptionValue(PATH_OPTION);
+
+		if (!cmd.hasOption(PROPS_OPTION)) {
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(USAGE, options);
+			System.exit(1);
+		} 
+		propertiesFile = cmd.getOptionValue(PROPS_OPTION);		
 		
 		if (!cmd.hasOption(EXPORT_TYPE_OPTION)) {
 			HelpFormatter formatter = new HelpFormatter();
@@ -244,17 +264,17 @@ public class SAExportApp {
 	private void loadSettings() {
 		Properties properties = new Properties();
 		try {
-		    properties.load(new FileInputStream("sa_export.properties"));
+		    properties.load(new FileInputStream(propertiesFile));
 		} catch (IOException e) {
 			System.err.print("Failed to locate sa_export.properties");
 			System.exit(1);
 		}
 		
-		hostname = properties.getProperty("hostname", "localhost");
+		hostname = properties.getProperty("hostname", "gw.canwea.ca");
 		user = properties.getProperty("user", "sysadmin");
-		password = properties.getProperty("password", "");
+		password = properties.getProperty("password", "wind");
 		database = properties.getProperty("database", "simply");
-		port = new Integer(properties.getProperty("port", "13541")).intValue();
+		port = new Integer(properties.getProperty("port", "13540")).intValue();
 	}
 	
 	private void connectToDatabase() {
@@ -404,7 +424,8 @@ public class SAExportApp {
 	}	
 	
 	protected void exportFile(String fileName, XMLElement rootNode) {
-		File xmlFile = new File(fileName);
+		String fullPath = exportPath + File.separator + fileName;
+		File xmlFile = new File(fullPath);
 		FileOutputStream fs;
 		try {
 			fs = new FileOutputStream(xmlFile);

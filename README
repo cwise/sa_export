@@ -1,0 +1,66 @@
+The sa_export utility is a Java application used for producing export files from Simply Accounting. It relies on SimplyAccounting running and maintaining an open MySQL server connection.
+
+Prerequisites
+-------------
+	- Java 1.5 or greater
+	- MySQL client libraries
+
+
+Installation
+------------
+	- install the application in it's own directory with this hierarchy
+		sa_export
+			sa_export.jar
+			sa_export.properties
+			lib
+				commons-cli-1.2.jar
+				domlight-murmur.jar
+				mysql-connector-java-5.1.14-bin.jar
+				xercesImpl.har
+				xml-apis.jar
+				xmlParserAPIs.jar
+	
+Configuration
+-------------
+
+All configuration of the application is in the sa_export.properties file.
+
+hostname => the hostname or address of the server running SimplyAccounting (make sure you are aware of internal/external hosts)
+port => the port that SA/MySQL is listening on (default: 13540)
+user => the SA/MySQL user account with privileges to the accounting database
+password => the password for the above account
+database => the MySQL database name to connect to (default: simply)
+
+
+Usage
+-----
+
+The sa_export application is a Java-based jar file. Calling the application on the CLI will reveal all options:
+
+java -jar sa_export.jar
+
+usage: java -jar sa_export.jar [options]
+ -d <arg>       Date to export (current FY)
+ -f <arg>       FY to export
+ -h             Print help for this application
+ -p <arg>       Path to save output
+ -props <arg>   Properties file
+ -t <arg>       Export Type [c=customers, t=transactions, a=accounts,
+                p=projects]
+
+Examples
+--------
+
+Note that all examples use Unix paths. These should be altered to suit the target platform.
+
+Customer Export
+java -jar sa_export.jar -p '/path/to/save/to' -props '/path/to/sa_export.properties' -t c
+
+Account Export
+java -jar sa_export.jar -p '/path/to/save/to' -props '/path/to/sa_export.properties' -t a
+
+Project Export
+java -jar sa_export.jar -p '/path/to/save/to' -props '/path/to/sa_export.properties' -t p
+
+Transaction Export (for a given date)
+java -jar sa_export.jar -p '/path/to/save/to' -props '/path/to/sa_export.properties' -t t -d YY/MM/DD

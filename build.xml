@@ -10,13 +10,12 @@
     <property name="debuglevel" value="source,lines,vars"/>
     <property name="target" value="1.5"/>
     <property name="source" value="1.5"/>
-    <path id="SAExport">
-        <pathelement location="bin"/>
-        <pathelement location="lib/commons-cli-1.2.jar"/>
-        <pathelement location="lib/domlight-1.0.jar"/>
-        <pathelement location="lib/mysql-connector-java-5.1.14-bin.jar"/>
-        <pathelement location="lib/xml-apis.jar"/>
-        <pathelement location="lib/xmlParserAPIs.jar"/>
+    <path id="SAExport.classpath">
+        <pathelement location="${basedir}/lib/commons-cli-1.2.jar"/>
+        <pathelement location="${basedir}/lib/domlight-murmur.jar"/>
+        <pathelement location="${basedir}/lib/mysql-connector-java-5.1.14-bin.jar"/>
+        <pathelement location="${basedir}/lib/xml-apis.jar"/>
+        <pathelement location="${basedir}/lib/xmlParserAPIs.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>

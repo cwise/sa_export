@@ -97,6 +97,7 @@ public class SAExportApp {
 		}
 
 		saExportApp.disconnectFromDatabase();
+		System.exit(0);
 	}
 
 	private void exportAccounts() {
@@ -114,18 +115,24 @@ public class SAExportApp {
 			exportFile(String.format("accounts_%s.xml", timestamp), rootNode);
 		} catch (DatabaseException e) {
 			System.out.println(String.format("Database exception: %s", e.getMessage()));
+			System.exit(1);
 			return;
 		} catch (ReflectionException e) {
 			System.out.println(String.format("Reflection exception: %s", e.getMessage()));
+			System.exit(1);
 			return;
 		} catch (NoSuchMethodException e) {
 			System.err.println(String.format("NoSuchMethodException: " + e.getMessage()));
+			System.exit(1);
 		} catch (ClassNotFoundException e) {
 			System.err.println(String.format("ClassNotFoundException: " + e.getMessage()));
+			System.exit(1);
 		} catch (IllegalAccessException e) {
 			System.err.println(String.format("IllegalAccessException: " + e.getMessage()));
+			System.exit(1);
 		} catch (InvocationTargetException e) {
 			System.err.println(String.format("InvocationTargetException: " + e.getMessage()));
+			System.exit(1);
 		}
 	}
 
@@ -144,16 +151,21 @@ public class SAExportApp {
 			exportFile(String.format("projects_%s.xml", timestamp), rootNode);
 		} catch (DatabaseException e) {
 			System.out.println(String.format("Database exception: %s", e.getMessage()));
+			System.exit(1);
 			return;
 		} catch (ReflectionException e) {
 			System.out.println(String.format("Reflection exception: %s", e.getMessage()));
+			System.exit(1);
 			return;
 		} catch (NoSuchMethodException e) {
 			System.err.println(String.format("NoSuchMethodException: " + e.getMessage()));
+			System.exit(1);
 		} catch (ClassNotFoundException e) {
 			System.err.println(String.format("ClassNotFoundException: " + e.getMessage()));
+			System.exit(1);
 		} catch (IllegalAccessException e) {
 			System.err.println(String.format("IllegalAccessException: " + e.getMessage()));
+			System.exit(1);
 		} catch (InvocationTargetException e) {
 			System.err.println(String.format("InvocationTargetException: " + e.getMessage()));
 		}
@@ -358,18 +370,24 @@ public class SAExportApp {
 			exportFile(String.format("transactions_%s.xml", timestamp), rootNode);
 		} catch (DatabaseException e) {
 			System.out.println(String.format("Database exception: %s", e.getMessage()));
+			System.exit(1);
 			return;
 		} catch (ReflectionException e) {
 			System.out.println(String.format("Reflection exception: %s", e.getMessage()));
+			System.exit(1);
 			return;
 		} catch (NoSuchMethodException e) {
 			System.err.println(String.format("NoSuchMethodException: " + e.getMessage()));
+			System.exit(1);
 		} catch (ClassNotFoundException e) {
 			System.err.println(String.format("ClassNotFoundException: " + e.getMessage()));
+			System.exit(1);
 		} catch (IllegalAccessException e) {
 			System.err.println(String.format("IllegalAccessException: " + e.getMessage()));
+			System.exit(1);
 		} catch (InvocationTargetException e) {
 			System.err.println(String.format("InvocationTargetException: " + e.getMessage()));
+			System.exit(1);
 		}
 	}
 
@@ -398,18 +416,24 @@ public class SAExportApp {
 			exportFile(String.format("customers_%s.xml", timestamp), rootNode);
 		} catch (DatabaseException e) {
 			System.out.println(String.format("Database exception: %s", e.getMessage()));
+			System.exit(1);
 			return;
 		} catch (ReflectionException e) {
 			System.out.println(String.format("Reflection exception: %s", e.getMessage()));
+			System.exit(1);
 			return;
 		} catch (NoSuchMethodException e) {
 			System.err.println(String.format("NoSuchMethodException: " + e.getMessage()));
+			System.exit(1);
 		} catch (ClassNotFoundException e) {
 			System.err.println(String.format("ClassNotFoundException: " + e.getMessage()));
+			System.exit(1);
 		} catch (IllegalAccessException e) {
 			System.err.println(String.format("IllegalAccessException: " + e.getMessage()));
+			System.exit(1);
 		} catch (InvocationTargetException e) {
 			System.err.println(String.format("InvocationTargetException: " + e.getMessage()));
+			System.exit(1);
 		}
 	}
 	
@@ -433,8 +457,10 @@ public class SAExportApp {
 			fs.close();				
 		} catch (FileNotFoundException e) {
 			System.err.println(String.format("FileNotFoundException: " + e.getMessage()));
+			System.exit(1);
 		} catch (IOException e) {
 			System.err.println(String.format("IOException: " + e.getMessage()));
+			System.exit(1);
 		}
 	}
 	
@@ -448,10 +474,13 @@ public class SAExportApp {
 			ser.close();
 		} catch (IOException e) {
 			System.err.println(String.format("IOException: " + e.getMessage()));
+			System.exit(1);
 		} catch (SecurityException e) {
 			System.err.println(String.format("SecurityException: " + e.getMessage()));
+			System.exit(1);
 		} catch (IllegalArgumentException e) {
 			System.err.println(String.format("IllegalArgumentException: " + e.getMessage()));
+			System.exit(1);
 		} 
 	}	
 }
